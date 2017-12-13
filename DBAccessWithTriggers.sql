@@ -5,12 +5,9 @@ if (select count(*)
 BEGIN
     DROP DATABASE JobSearch;
 END
-
-CREATE DATABASE JobSearch
-
+	CREATE DATABASE JobSearch
 GO
-
-USE JobSearch
+	USE JobSearch
 GO
 CREATE TABLE Activities 
 	(
@@ -28,7 +25,6 @@ CREATE TABLE Activities
 	)
 	GO
 	
-
 	Print 'Activities Table Created'
 	GO
 	Create Trigger Trg_afteractivitymodified on Activities  After insert,update 
@@ -51,9 +47,7 @@ CREATE TABLE Sources
 	Descript varchar(255) null
 	PRIMARY KEY (SourceID)
 	)
-
 	print 'Sources Table Created'
-
 	GO
 CREATE TABLE Leads
 	(
@@ -130,36 +124,33 @@ CREATE TABLE Companies
 
 	PRIMARY KEY (CompanyID)
 	)	
-
 	Print 'Companies Table Created'
-
 	GO
 	
-	CREATE TABLE BusinessTypes
+CREATE TABLE BusinessTypes
 	(
 	BusinessType varchar(255)
 	Primary Key (BusinessType)
 	)
 	Print 'BusinessTypes Table Created'
 
-
 -- INDEXES
-    CREATE INDEX idx_activities ON Activities (LeadID,ActivityDate,ActivityType);
+CREATE INDEX idx_activities ON Activities (LeadID,ActivityDate,ActivityType);
 	Print 'Index idx_activities created';
 
-	CREATE Unique Index idx_BusinessType ON BusinessTypes(BusinessType);
+CREATE Unique Index idx_BusinessType ON BusinessTypes(BusinessType);
 	Print 'Unique index idx_BusinesType created';
 
-	CREATE  Index idx_Companies ON Companies (City,state,zip);
+CREATE  Index idx_Companies ON Companies (City,state,zip);
 	Print 'Index idx_Companies created';
 
-	CREATE  Index idx_Contacts ON Contacts (CompanyID,ContactLastName,Title);
+CREATE  Index idx_Contacts ON Contacts (CompanyID,ContactLastName,Title);
 	Print 'Index idx_Contacts created';
 
-	CREATE  Index idx_Leads ON Leads (RecordDate,EmploymentType,Location,CompanyID,AgencyID,ContactID,SourceID);
+CREATE  Index idx_Leads ON Leads (RecordDate,EmploymentType,Location,CompanyID,AgencyID,ContactID,SourceID);
 	Print 'Index idx_Leads created';
 
-	CREATE  Index idx_Sources ON Sources (SourceName,SourceType);
+CREATE  Index idx_Sources ON Sources (SourceName,SourceType);
 	Print 'Index idx_Sources created';
 	
 ----FOREIGN KEYS ADDED
@@ -173,9 +164,11 @@ CREATE TABLE Companies
 
 
 --TRIGGER CREATION
+
+-- INSERT Activities
 go
 CREATE TRIGGER trgCheckLeadidactivities
-ON activities
+ON ACTIVITIES
 AFTER INSERT, UPDATE
 AS
 	IF EXISTS
@@ -190,8 +183,27 @@ BEGIN
 END;
 
 GO
+CREATE TRIGGER trgdeleteleadactivities
+ON ACTIVITIES
+AFTER DELETE
+AS
+	IF EXISTS
+	(
+		SELECT LeadID
+		FROM deleted
+		WHERE LeadID IN (SELECT LeadID FROM Activities )
+	)
+
+BEGIN
+	RAISERROR ('LEADID CANNOT BE DELETED FROM ACTIVITIES',16,1)
+	ROLLBACK TRANSACTION
+END;
+
+GO
+--- Trigger  companies leads
+GO
 CREATE TRIGGER trgCheckCompaniesIDLEADS
-ON leads
+ON LEADS
 AFTER INSERT, UPDATE
 AS
 	IF EXISTS
@@ -207,6 +219,25 @@ BEGIN
 END
 
 GO
+
+CREATE TRIGGER trgdeleteCompaniesIDLEADS
+ON leads
+AFTER Delete
+AS
+	IF EXISTS
+	(
+		SELECT CompanyId
+		FROM deleted
+		WHERE CompanyId   IN (SELECT CompanyId FROM leads )
+	)
+
+BEGIN
+	RAISERROR ('CompanyID can not be deleted from LEADS TABLE',16,1)
+	ROLLBACK TRANSACTION
+END
+
+GO
+
 CREATE TRIGGER trgCheckcontactIDLEADS
 ON leads
 AFTER INSERT, UPDATE
@@ -222,26 +253,56 @@ AS
 BEGIN
 	RAISERROR ('ContactID DOES NOT EXIST ON LEADS TABLE',16,1)
 END
+go
+CREATE TRIGGER trgdeletecontactIDLEADS
+ON LEADS
+AFTER DELETE
+AS
+	IF EXISTS
+	(
+		SELECT ContactID
+		FROM deleted
+		WHERE ContactID  IN (SELECT ContactID FROM leads )
+	)
+
+BEGIN
+	RAISERROR ('ContactID cannot be deleted from LEADS TABLE',16,1)
+	ROLLBACK TRANSACTION
+END
 
 GO
 CREATE TRIGGER trgCheckSourceIDLEADS
-ON leads
+ON LEADS
 AFTER INSERT, UPDATE
 AS
-
 	IF EXISTS
 	(
 		SELECT SourceID
 		FROM inserted
 		WHERE SourceID  NOT IN (SELECT SourceID FROM Sources )
 	)
-
-
 BEGIN
 	RAISERROR ('SourceID DOES NOT EXIST ON SOURCE TABLE',16,1)
 END
 
 GO
+CREATE TRIGGER trgdeleteSourceIDLEADS
+ON LEADS
+AFTER DELETE
+AS
+	IF EXISTS
+	(
+		SELECT SourceID
+		FROM deleted
+		WHERE SourceID  IN (SELECT SourceID FROM leads )
+	)
+BEGIN
+	RAISERROR ('SourceID CANNOT BE DELETED FORM LEADS TABLE',16,1)
+	ROLLBACK TRANSACTION
+END
+
+GO
+
 CREATE TRIGGER trgCheckCompanyIDcontacts
 ON Contacts
 AFTER INSERT, UPDATE
@@ -255,6 +316,22 @@ AS
 
 BEGIN
 	RAISERROR ('CompanyID DOES NOT EXIST ON COMPANIES TABLE',16,1)
+END;
+GO
+CREATE TRIGGER trgDELETECompanyIDcontacts
+ON CONTACTS
+AFTER DELETE
+AS
+	IF EXISTS
+	(
+		SELECT CompanyId
+		FROM DELETED
+		WHERE CompanyId  IN (SELECT CompanyId FROM COMPANIES )
+	)
+
+BEGIN
+	RAISERROR ('CompanyID CANNOT BE DELETED FROM COMPANIES TABLE',16,1)
+	ROLLBACK TRANSACTION
 END;
 
 GO
@@ -275,6 +352,23 @@ END;
 
 GO
 
+CREATE TRIGGER trgdeleteBUSINESSTYPECOMPANIES
+ON COMPANIES
+AFTER DELETE
+AS
+	IF EXISTS
+	(
+		SELECT BusinessType
+		FROM deleted
+		WHERE BusinessType IN (SELECT BusinessType FROM BusinessTypes )
+	)
+
+BEGIN
+	RAISERROR ('BUSINESSTYPE CANNOT BE DELETED FROM BUSINESSTYPES TABLE ',16,1)
+	ROLLBACK TRANSACTION
+END;
+
+GO
 
 --INSERTS
 
