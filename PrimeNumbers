@@ -1,0 +1,22 @@
+DECLARE
+    @i INT,
+    @a INT,
+    @count INT
+
+SET @i = 1
+WHILE (@i <= 500)
+    BEGIN
+        SET @count = 0
+        SET @a = 1
+
+WHILE (@a <= @i)
+     BEGIN
+     IF (@i % @a = 0) 
+         SET @count = @count + 1
+         SET @a = @a + 1
+     END
+
+     IF (@count = 2) 
+            PRINT @i
+        SET @i = @i + 1
+    END 
