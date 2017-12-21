@@ -1,1 +1,2 @@
-# Arts Class Projects"
+
+# Art's Class Projects
