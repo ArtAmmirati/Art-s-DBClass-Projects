@@ -16,5 +16,5 @@
 	RETURNS decimal(10,3)
 	AS
 	BEGIN
-	RETURN (@lbs * 2.54)
+	RETURN (@lbs * .454)
 	END
